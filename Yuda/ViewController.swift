@@ -4,32 +4,33 @@
 //
 //  Created by 신유수 on 11/30/24.
 //
-
 import UIKit
+import WebKit // WebKit을 추가로 가져옵니다.
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, WKNavigationDelegate {
+
+    var webView: WKWebView!
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        print("ViewController: Loaded!")
 
-        // 배경색 설정
-        view.backgroundColor = .white
+        // 웹뷰 초기화
+        webView = WKWebView()
+        webView.navigationDelegate = self
+        view.addSubview(webView)
 
-        // 간단한 UILabel 추가
-        let label = UILabel()
-        label.text = "Hello, World!"
-        label.textColor = .black
-        label.font = UIFont.systemFont(ofSize: 24)
-        label.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(label)
-
-        // Auto Layout 설정
+        // 웹뷰의 레이아웃 설정 (오토레이아웃 적용)
+        webView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            webView.topAnchor.constraint(equalTo: view.topAnchor),
+            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+
+        // URL 로드
+        if let url = URL(string: "https://yourdiary.site") {
+            webView.load(URLRequest(url: url))
+        }
     }
 }
