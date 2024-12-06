@@ -5,21 +5,25 @@
 //  Created by 신유수 on 11/30/24.
 //
 import UIKit
-import WebKit // WebKit을 추가로 가져옵니다.
+import WebKit
 
-class ViewController: UIViewController, WKNavigationDelegate {
-
+class ViewController: UIViewController, WKScriptMessageHandler {
+    
     var webView: WKWebView!
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // 웹뷰 초기화
-        webView = WKWebView()
-        webView.navigationDelegate = self
+        
+        // JavaScript 메시지 핸들러 설정
+        let contentController = WKUserContentController()
+        contentController.add(self, name: "nativeAlert") // 핸들러 이름 등록
+        
+        let config = WKWebViewConfiguration()
+        config.userContentController = contentController
+        webView = WKWebView(frame: .zero, configuration: config)
         view.addSubview(webView)
-
-        // 웹뷰의 레이아웃 설정 (오토레이아웃 적용)
+        
+        // Auto Layout 설정
         webView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -27,10 +31,19 @@ class ViewController: UIViewController, WKNavigationDelegate {
             webView.topAnchor.constraint(equalTo: view.topAnchor),
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
-
-        // URL 로드
+        
         if let url = URL(string: "https://yourdiary.site") {
-            webView.load(URLRequest(url: url))
+             webView.load(URLRequest(url: url))
+         }
+    }
+    
+    // WKScriptMessageHandler 필수 구현
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == "nativeAlert", let messageBody = message.body as? String {
+            // UIAlertController로 메시지 표시
+            let alert = UIAlertController(title: "알림", message: messageBody, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "확인", style: .default, handler: nil))
+            self.present(alert, animated: true, completion: nil)
         }
     }
 }
