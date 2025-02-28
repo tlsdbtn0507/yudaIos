@@ -84,6 +84,7 @@ class ViewController: UIViewController, WKScriptMessageHandler {
         contentController.add(self, name: "nativeConfirm") // Confirm 핸들러 등록
         
         let config = WKWebViewConfiguration()
+        
         config.userContentController = contentController
         webView = WKWebView(frame: .zero, configuration: config)
         webView.backgroundColor = .clear // 웹뷰의 기본 배경을 투명으로 설정
@@ -102,7 +103,7 @@ class ViewController: UIViewController, WKScriptMessageHandler {
         ])
         
         // 웹뷰 로드
-        if let url = URL(string: "https://yourdiary.site") {
+        if let url = URL(string: Config.baseURL) {
             webView.load(URLRequest(url: url))
         }
     }
@@ -124,14 +125,28 @@ class ViewController: UIViewController, WKScriptMessageHandler {
         }
     }
     private func showNativeConfirm(message: String) {
-        let alertController = UIAlertController(title: "Confirm", message: message, preferredStyle: .alert)
+        let alertController = UIAlertController(title: nil, message: message, preferredStyle: .alert)
 
         let confirmAction = UIAlertAction(title: "확인", style: .default) { _ in
-            self.webView.evaluateJavaScript("window.confirmCallback(true);", completionHandler: nil)
+            let jsCode = "if (typeof window.confirmCallback === 'function') { window.confirmCallback(true); } else { console.log('window.confirmCallback is not defined'); }"
+            self.webView.evaluateJavaScript(jsCode) { (result, error) in
+                if let error = error {
+                    print("JavaScript 실행 오류: \(error.localizedDescription)")
+                } else {
+                    print("JavaScript 실행 완료")
+                }
+            }
         }
 
         let cancelAction = UIAlertAction(title: "취소", style: .cancel) { _ in
-            self.webView.evaluateJavaScript("window.confirmCallback(false);", completionHandler: nil)
+            let jsCode = "if (typeof window.confirmCallback === 'function') { window.confirmCallback(false); } else { console.log('window.confirmCallback is not defined'); }"
+            self.webView.evaluateJavaScript(jsCode) { (result, error) in
+                if let error = error {
+                    print("JavaScript 실행 오류: \(error.localizedDescription)")
+                } else {
+                    print("JavaScript 실행 완료")
+                }
+            }
         }
 
         alertController.addAction(confirmAction)
