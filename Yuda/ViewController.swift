@@ -6,7 +6,7 @@
 //
 
 import UIKit
-import WebKit
+@preconcurrency import WebKit
 
 // UIColor 확장: HEX 코드를 UIColor로 변환
 extension UIColor {
@@ -56,7 +56,7 @@ extension WKWebView {
     }
 }
 
-class ViewController: UIViewController, WKScriptMessageHandler {
+class ViewController: UIViewController, WKScriptMessageHandler, WKUIDelegate {
 
     
     var webView: WKWebView!
@@ -90,6 +90,9 @@ class ViewController: UIViewController, WKScriptMessageHandler {
         webView.backgroundColor = .clear // 웹뷰의 기본 배경을 투명으로 설정
         webView.isOpaque = false // 배경 투명 설정
         
+        // ✅ WKUIDelegate 설정 (Confirm 지원)
+        webView.uiDelegate = self
+        
         // 웹뷰 추가
         view.addSubview(webView)
         
@@ -102,10 +105,16 @@ class ViewController: UIViewController, WKScriptMessageHandler {
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         
+        
         // 웹뷰 로드
+//        if let url = URL(string: "https://yourdiary.site") {
+//             webView.load(URLRequest(url: url))
+//         }
+        //개발환경 용 웹뷰 로드
         if let url = URL(string: Config.baseURL) {
             webView.load(URLRequest(url: url))
         }
+        
     }
     
     
@@ -118,40 +127,26 @@ class ViewController: UIViewController, WKScriptMessageHandler {
                 self.present(alert, animated: true, completion: nil)
             }
         }
-        if message.name == "nativeConfirm", let messageBody = message.body as? String {
-            DispatchQueue.main.async {
-                self.showNativeConfirm(message: messageBody)
-            }
-        }
     }
-    private func showNativeConfirm(message: String) {
+    
+    // iOS 네이티브 Confirm 처리
+    func webView(_ webView: WKWebView,
+                 runJavaScriptConfirmPanelWithMessage message: String,
+                 initiatedByFrame frame: WKFrameInfo,
+                 completionHandler: @escaping (Bool) -> Void) {
+        
         let alertController = UIAlertController(title: nil, message: message, preferredStyle: .alert)
 
-        let confirmAction = UIAlertAction(title: "확인", style: .default) { _ in
-            let jsCode = "if (typeof window.confirmCallback === 'function') { window.confirmCallback(true); } else { console.log('window.confirmCallback is not defined'); }"
-            self.webView.evaluateJavaScript(jsCode) { (result, error) in
-                if let error = error {
-                    print("JavaScript 실행 오류: \(error.localizedDescription)")
-                } else {
-                    print("JavaScript 실행 완료")
-                }
-            }
+        alertController.addAction(UIAlertAction(title: "확인", style: .default) { _ in
+            completionHandler(true)
+        })
+
+        alertController.addAction(UIAlertAction(title: "취소", style: .cancel) { _ in
+            completionHandler(false)
+        })
+
+        DispatchQueue.main.async {
+            self.present(alertController, animated: true, completion: nil)
         }
-
-        let cancelAction = UIAlertAction(title: "취소", style: .cancel) { _ in
-            let jsCode = "if (typeof window.confirmCallback === 'function') { window.confirmCallback(false); } else { console.log('window.confirmCallback is not defined'); }"
-            self.webView.evaluateJavaScript(jsCode) { (result, error) in
-                if let error = error {
-                    print("JavaScript 실행 오류: \(error.localizedDescription)")
-                } else {
-                    print("JavaScript 실행 완료")
-                }
-            }
-        }
-
-        alertController.addAction(confirmAction)
-        alertController.addAction(cancelAction)
-
-        self.present(alertController, animated: true, completion: nil)
     }
 }
